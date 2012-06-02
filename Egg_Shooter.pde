@@ -7,6 +7,11 @@ const unsigned long MIN_PURGE_DELAY = 750; // milliseconds
 const unsigned long MAX_PURGE_DELAY = 1500; // milliseconds
 const unsigned long SIGNAL_INTERVAL = 300; //milliseconds
 
+// Pins for LEDs
+const int LED_1 = 13;
+const int LED_2 = 12;
+const int LED_3 = 11;
+
 // Addresses for Relay Boxes
 const String BOX1 = "0e";
 const String BOX2 = "0f";
@@ -62,7 +67,11 @@ unsigned long purge_delay = MIN_PURGE_DELAY; // start it at the minimum value.
 void setup() {
   Serial.begin(19200);
 
-  pinMode(13, OUTPUT); // Indicator LED
+  pinMode(LED_1, OUTPUT); 
+  pinMode(LED_2, OUTPUT); 
+  pinMode(LED_3, OUTPUT); 
+  digitalWrite(LED_1, HIGH); // Power light!
+
   pinMode(PURGE_DELAY_PIN, INPUT);
   pinMode(PURGE_BUTTON_PIN, INPUT);
   digitalWrite(PURGE_BUTTON_PIN, HIGH);
@@ -77,15 +86,22 @@ void setup() {
   }
 }
 
-
+boolean led_1;
+boolean led_2;
+boolean led_3;
+boolean activity;
 void loop() {
 
-  boolean indicator_led = false;
+  //led_1 = false; // using this as a power indicator
+  led_2 = false;
+  led_3 = false;
+  activity = false;
+
   unsigned long purge_delay = getPurgeDelay();
   boolean purge_button_pressed = (digitalRead(PURGE_BUTTON_PIN) == LOW);
   if ( purge_button_pressed) {
     purgeAll( !last_purge_button_state );
-    indicator_led = true;
+    led_3 = true;
   }
   last_purge_button_state = purge_button_pressed;
   
@@ -93,19 +109,17 @@ void loop() {
   for (int i=0; i<NUM_SHOOTERS; i++) {
     boolean button_pressed = ( digitalRead(shooters[i].button_pin) == LOW );// LOW means the switch is closed.
     if (button_pressed) {
-      indicator_led = true;
+      led_2 = true;
       fuelSignal(i, 1, !last_button_state[i]);
     } else {
       if ( last_button_state[i] ) { // button was on but is now off
+        led_3 = true;
         button_off_time[i] = millis();
         fuelSignal(i, 0, true);
         purgeSignal(i, 1, true); 
       } else { // button was and is off
-      
-        //Serial.print((button_off_time[i] + purge_delay));
-        //Serial.print("::");
-        //Serial.println(millis());
         if ( (button_off_time[i] + purge_delay) > millis() ) {
+          led_3 = true;
           purgeSignal(i, 1, false);
         } else {
           purgeSignal(i, 0, true);
@@ -114,7 +128,10 @@ void loop() {
     }
     last_button_state[i] = button_pressed;
   }
-  digitalWrite(13, indicator_led ? HIGH : LOW);
+  //digitalWrite(LED_1, led_1 ? HIGH : LOW);
+  digitalWrite(LED_1, activity ? LOW : HIGH);
+  digitalWrite(LED_2, led_2 ? HIGH : LOW);
+  digitalWrite(LED_3, led_3 ? HIGH : LOW);
 }
 
 void sendSignal(int shooter_idx, String address, int value, unsigned long last_signal_time, boolean now) {
@@ -125,6 +142,7 @@ void sendSignal(int shooter_idx, String address, int value, unsigned long last_s
     Serial.print(".");
     Serial.print("\n");
     last_signal_sent[shooter_idx] = millis();
+    activity = true;
   } 
 }
 
