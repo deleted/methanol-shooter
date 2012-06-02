@@ -6,11 +6,18 @@ const int NUM_SHOOTERS = 6;
 const unsigned long MIN_PURGE_DELAY = 750; // milliseconds
 const unsigned long MAX_PURGE_DELAY = 1500; // milliseconds
 const unsigned long SIGNAL_INTERVAL = 300; //milliseconds
+const unsigned long ACTIVITY_BLINK_TIME = 60; //milliseconds.  how long to modulate the activity indicator when serial messages are sent.
 
 // Pins for LEDs
 const int LED_1 = 13;
 const int LED_2 = 12;
 const int LED_3 = 11;
+
+// LED State
+//boolean led_1;
+boolean led_2;
+boolean led_3;
+unsigned long activity_until = millis(); // If this is greater than the current time, serial activity is happening.
 
 // Addresses for Relay Boxes
 const String BOX1 = "0e";
@@ -86,16 +93,12 @@ void setup() {
   }
 }
 
-boolean led_1;
-boolean led_2;
-boolean led_3;
-boolean activity;
+
 void loop() {
 
   //led_1 = false; // using this as a power indicator
   led_2 = false;
   led_3 = false;
-  activity = false;
 
   unsigned long purge_delay = getPurgeDelay();
   boolean purge_button_pressed = (digitalRead(PURGE_BUTTON_PIN) == LOW);
@@ -128,8 +131,7 @@ void loop() {
     }
     last_button_state[i] = button_pressed;
   }
-  //digitalWrite(LED_1, led_1 ? HIGH : LOW);
-  digitalWrite(LED_1, activity ? LOW : HIGH);
+  digitalWrite(LED_1, (activity_until > millis()) ? LOW : HIGH);
   digitalWrite(LED_2, led_2 ? HIGH : LOW);
   digitalWrite(LED_3, led_3 ? HIGH : LOW);
 }
@@ -142,7 +144,7 @@ void sendSignal(int shooter_idx, String address, int value, unsigned long last_s
     Serial.print(".");
     Serial.print("\n");
     last_signal_sent[shooter_idx] = millis();
-    activity = true;
+    activity_until = millis() + ACTIVITY_BLINK_TIME;
   } 
 }
 
