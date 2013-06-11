@@ -3,7 +3,7 @@
  */
 
 const int NUM_SHOOTERS = 6;
-const unsigned long MIN_PURGE_DELAY = 750; // milliseconds
+const unsigned long MIN_PURGE_DELAY = 500; // milliseconds
 const unsigned long MAX_PURGE_DELAY = 1500; // milliseconds
 const unsigned long SIGNAL_INTERVAL = 300; //milliseconds
 const unsigned long ACTIVITY_BLINK_TIME = 60; //milliseconds.  how long to modulate the activity indicator when serial messages are sent.
